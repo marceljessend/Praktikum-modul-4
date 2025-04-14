@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Survei Pemilu 2025</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: rgb(255, 255, 255);
+      color: #333;
+    }
+    header {
+      background-color: red;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    .bendera {
+      width: 60px;
+      height: 40px;
+      margin: 0 auto 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+    .bendera div {
+      height: 50%;
+    }
+    .merah {
+      background-color: rgb(255, 10, 10);
+    }
+    .putih {
+      background-color: white;
+    }
+    main {
+      padding: 30px;
+    }
+    form {
+      background-color: #ddd9d9;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+    input[type="text"] {
+      padding: 5px;
+      width: 100%;
+      max-width: 300px;
+      margin-top: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    canvas {
+      max-width: 600px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="bendera">
+      <div class="merah"></div>
+      <div class="putih"></div>
+    </div>
+    <h1>Survei Pemilu 2025</h1>
+    <p>Siapa calon presiden pilihan Anda?</p>
+  </header>
+
+  <main>
+    <form id="formSurvei">
+      <label for="id">Masukkan ID Pemilih:</label>
+      <input type="text" id="id" name="id" required>
+
+      <label><input type="radio" name="pilihan" value="Calon A" required> Calon A - Budi Santosa</label>
+      <label><input type="radio" name="pilihan" value="Calon B"> Calon B - Siti Aminah</label>
+      <label><input type="radio" name="pilihan" value="Calon C"> Calon C - Andi Pratama</label>
+      <label><input type="radio" name="pilihan" value="Calon D"> Calon D - Rina Kurniawati</label>
+      <label><input type="radio" name="pilihan" value="Calon E"> Calon E - Dedi Gunawan</label><br>
+      
+      <button type="submit">Kirim Suara</button>
+    </form>
+
+    <h2>Hasil Sementara:</h2>
+    <canvas id="grafikSurvei"></canvas>
+  </main>
+
+  <script>
+    const form = document.getElementById('formSurvei');
+    const ctx = document.getElementById('grafikSurvei').getContext('2d');
+    let chart;
+
+    function ambilData() {
+      fetch('ambil_data.php')
+        .then(res => res.json())
+        .then(data => {
+          const labels = data.map(item => item.pilihan);
+          const jumlah = data.map(item => item.jumlah);
+
+          const warna = [
+            '#FF3B30', '#34C759', '#007AFF', '#FF9500', '#AF52DE'
+          ];
+
+          if (chart) chart.destroy();
+          chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Jumlah Suara',
+                data: jumlah,
+                backgroundColor: warna.slice(0, labels.length)
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { stepSize: 1 }
+                }
+              }
+            }
+          });
+        });
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = new FormData(form);
+      fetch('simpan.php', {
+        method: 'POST',
+        body: data
+      })
+      .then(res => {
+        if (!res.ok) return res.text().then(text => { throw new Error(text); });
+        return res.text();
+      })
+      .then(response => {
+        alert(response);
+        form.reset();
+        ambilData();
+      })
+      .catch(err => {
+        alert("Gagal mengirim suara: " + err.message);
+      });
+    });
+
+    ambilData();
+  </script>
+</body>
+</html>
